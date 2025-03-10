@@ -24,7 +24,9 @@ export default function Home() {
           console.error("Error joining group:", err);
         });
         connect.on("ReceiveChanges", (textContent) => {
-          setText(textContent);
+          setText((prevText) =>
+            prevText !== textContent ? textContent : prevText
+          );
         });
       })
       .catch((err) => {
@@ -64,8 +66,13 @@ export default function Home() {
 
       if (currentText !== text) {
         const selection = window.getSelection();
-        const range = selection?.getRangeAt(0);
-        let startOffset = range?.startOffset || 0;
+
+        let range = null;
+        let startOffset = 0;
+        if (selection && selection.rangeCount > 0) {
+          range = selection.getRangeAt(0);
+          startOffset = range.startOffset;
+        }
 
         editableDivRef.current.textContent = text;
 
@@ -88,7 +95,6 @@ export default function Home() {
     }
   }, [text]);
 
-  //poggers
   return (
     <div className="px-4">
       <div
