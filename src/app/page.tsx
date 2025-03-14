@@ -55,44 +55,6 @@ export default function Home() {
       }
     };
   };
-  // useEffect(() => {
-  //   const connect = new HubConnectionBuilder()
-  //     .withUrl("https://localhost:7248/documenthub")
-  //     .withAutomaticReconnect()
-  //     .configureLogging(LogLevel.Information)
-  //     .build();
-
-  //   setConnection(connect);
-
-  //   connect
-  //     .start()
-  //     .then(() => {
-  //       connect.invoke("JoinDocument", name).catch((err) => {
-  //         console.error("Error joining group:", err);
-  //       });
-  //       connect.on("ReceiveChanges", (textContent) => {
-  //         setText((prevText) =>
-  //           prevText !== textContent ? textContent : prevText
-  //         );
-  //       });
-
-  //       connect.on("ReceiveCursor", (user, position) => {
-  //         setCursors((prev) => ({ ...prev, [user]: position }));
-  //       });
-  //       setIsConnected(true);
-  //     })
-  //     .catch((err) => {
-  //       console.error("Error while connecting to SignalR Hub:", err);
-  //     });
-
-  //   return () => {
-  //     if (connection) {
-  //       connection
-  //         .stop()
-  //         .catch((err) => console.error("Error stopping connection:", err));
-  //     }
-  //   };
-  // }, []);
 
   const [text, setText] = useState<string>("");
   const editableDivRef = useRef<HTMLDivElement | null>(null);
