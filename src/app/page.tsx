@@ -11,7 +11,13 @@ const CURSOR_DEBOUNCE_TIME = 10;
 
 export default function Home() {
   const [connection, setConnection] = useState<HubConnection | null>(null);
-  useEffect(() => {
+  const [isConnected, setIsConnected] = useState(false);
+  const [name, setName] = useState("");
+  const connectToSignalR = () => {
+    if (!name) {
+      return;
+    }
+
     const connect = new HubConnectionBuilder()
       .withUrl("https://localhost:7248/documenthub")
       .withAutomaticReconnect()
@@ -23,7 +29,7 @@ export default function Home() {
     connect
       .start()
       .then(() => {
-        connect.invoke("JoinDocument", "Jesper").catch((err) => {
+        connect.invoke("JoinDocument", name).catch((err) => {
           console.error("Error joining group:", err);
         });
         connect.on("ReceiveChanges", (textContent) => {
@@ -35,6 +41,7 @@ export default function Home() {
         connect.on("ReceiveCursor", (user, position) => {
           setCursors((prev) => ({ ...prev, [user]: position }));
         });
+        setIsConnected(true);
       })
       .catch((err) => {
         console.error("Error while connecting to SignalR Hub:", err);
@@ -47,7 +54,45 @@ export default function Home() {
           .catch((err) => console.error("Error stopping connection:", err));
       }
     };
-  }, []);
+  };
+  // useEffect(() => {
+  //   const connect = new HubConnectionBuilder()
+  //     .withUrl("https://localhost:7248/documenthub")
+  //     .withAutomaticReconnect()
+  //     .configureLogging(LogLevel.Information)
+  //     .build();
+
+  //   setConnection(connect);
+
+  //   connect
+  //     .start()
+  //     .then(() => {
+  //       connect.invoke("JoinDocument", name).catch((err) => {
+  //         console.error("Error joining group:", err);
+  //       });
+  //       connect.on("ReceiveChanges", (textContent) => {
+  //         setText((prevText) =>
+  //           prevText !== textContent ? textContent : prevText
+  //         );
+  //       });
+
+  //       connect.on("ReceiveCursor", (user, position) => {
+  //         setCursors((prev) => ({ ...prev, [user]: position }));
+  //       });
+  //       setIsConnected(true);
+  //     })
+  //     .catch((err) => {
+  //       console.error("Error while connecting to SignalR Hub:", err);
+  //     });
+
+  //   return () => {
+  //     if (connection) {
+  //       connection
+  //         .stop()
+  //         .catch((err) => console.error("Error stopping connection:", err));
+  //     }
+  //   };
+  // }, []);
 
   const [text, setText] = useState<string>("");
   const editableDivRef = useRef<HTMLDivElement | null>(null);
@@ -68,7 +113,7 @@ export default function Home() {
         if (debounceRef.current) clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
           if (connection) {
-            connection.send("UpdateDocument", "Jesper", newText);
+            connection.send("UpdateDocument", name, newText);
             debounceCursorUpdate(cursorPos);
           }
         }, TEXT_DEBOUNCE_TIME);
@@ -80,7 +125,7 @@ export default function Home() {
     if (cursorDebounceRef.current) clearTimeout(cursorDebounceRef.current);
     cursorDebounceRef.current = setTimeout(() => {
       if (connection) {
-        connection.send("UpdateCursor", "Jesper", cursorPos);
+        connection.send("UpdateCursor", name, cursorPos);
       }
     }, CURSOR_DEBOUNCE_TIME);
   };
@@ -167,17 +212,38 @@ export default function Home() {
       ) : null;
     });
   };
-
-  return (
-    <div className="px-4">
-      <div
-        ref={editableDivRef}
-        contentEditable
-        onInput={handleInput}
-        suppressContentEditableWarning={true}
-        className="bg-amber-50 rounded-xl mx-auto my-4 p-4 h-[900px] w-full lg:w-1/3"
-      ></div>
-      {renderCursors()}
-    </div>
-  );
+  if (!isConnected) {
+    return (
+      <div className="h-screen flex justify-center items-center">
+        <div className="mb-4 flex flex-col gap-6 w-64">
+          <input
+            type="text"
+            placeholder="Enter your name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="border p-2 rounded w-full"
+          />
+          <button
+            onClick={connectToSignalR}
+            className="bg-blue-500 text-white px-4 py-2 rounded w-full hover:bg-blue-800 hover:cursor-pointer"
+          >
+            Connect
+          </button>
+        </div>
+      </div>
+    );
+  } else {
+    return (
+      <div className="px-4">
+        <div
+          ref={editableDivRef}
+          contentEditable
+          onInput={handleInput}
+          suppressContentEditableWarning={true}
+          className="bg-amber-50 rounded-xl mx-auto my-4 p-4 h-[900px] w-full lg:w-1/3"
+        ></div>
+        {renderCursors()}
+      </div>
+    );
+  }
 }
